@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParseX-Compiler</title>
+  <meta name="description"
+    content="TinyLang: An LL(1) Based Static Optimization Web Compiler with full pipeline visualization.">
+  <style>
+    /* ── Reset & Base ─────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-size: 14px;
+      line-height: 1.5;
+      padding-bottom: 70px;
+    }
+
+    /* ── Header ───────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      border-bottom: 2px solid #6366f1;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .header h1 span {
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .mode-btn {
+      padding: 7px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+
+    .mode-btn:last-child {
+      border-radius: 0 6px 6px 0;
+      border-left: 0;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, #6366f1, #7c3aed);
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    .mode-btn:hover:not(.active) {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #818cf8, #6366f1);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-primary:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      min-width: 220px;
+      z-index: 50;
+      padding: 4px 0;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #cbd5e1;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.1s;
+    }
+
+    .dropdown-item:hover {
+      background: #334155;
+      color: #f1f5f9;
+    }
+
+    .dropdown-item:first-child {
+      border-radius: 6px 6px 0 0;
+    }
+
+    .dropdown-item:last-child {
+      border-radius: 0 0 6px 6px;
+    }
+
+    /* ── Main Layout ──────────────────────── */
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel-left {
+      width: 40%;
+      border-right: 1px solid #1f2933;
+      display: flex;
+      flex-direction: column;
+      background: #111827;
+    }
+
+    .panel-right {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      background: #111827;
+    }
+
+    .panel-label {
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+    }
+
+    /* ── Editor ───────────────────────────── */
+    .editor-wrap {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .line-numbers {
+      width: 40px;
+      background: #0d1117;
+      border-right: 1px solid #1f2933;
+      padding: 10px 0;
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #6b7280;
+      text-align: right;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .line-numbers div {
+      padding-right: 8px;
+    }
+
+    #codeEditor {
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 10px 12px;
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      background: #0d1117;
+      color: #e5e7eb;
+      tab-size: 2;
+      caret-color: #6366f1;
+    }
+
+    .editor-footer {
+      padding: 6px 16px;
+      font-size: 11px;
+      color: #6b7280;
+      border-top: 1px solid #1f2933;
+      display: flex;
+      gap: 16px;
+    }
+
+    /* ── Tabs (hidden, replaced by bottom nav) ── */
+    .tabs {
+      display: none;
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ── Info Box ─────────────────────────── */
+    .info-box {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #a5b4fc;
+      line-height: 1.5;
+    }
+
+    /* ── Tables ───────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: #1e293b;
+      border-bottom: 2px solid #1f2933;
+      font-weight: 600;
+      color: #9ca3af;
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #1f2933;
+      color: #e5e7eb;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    /* ── Pills / Badges ───────────────────── */
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .pill-blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .pill-orange {
+      background: #ffedd5;
+      color: #9a3412;
+    }
+
+    .pill-gray {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .pill-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .pill-red {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .pill-yellow {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .pill-purple {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* ── Parse Table ──────────────────────── */
+    .parse-table-wrap {
+      overflow: auto;
+      max-height: 500px;
+    }
+
+    .parse-table {
+      border-collapse: collapse;
+      font-size: 11px;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .parse-table th {
+      padding: 6px 8px;
+      background: #1e293b;
+      border: 1px solid #1f2933;
+      font-weight: 600;
+      color: #9ca3af;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .parse-table td {
+      padding: 4px 6px;
+      border: 1px solid #1f2933;
+      color: #e5e7eb;
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .parse-table td.empty-cell {
+      background: rgba(220, 38, 38, 0.15);
+    }
+
+    /* ── AST Tree ──────────────────────────── */
+    #ast-container {
+      width: 100%;
+      height: 550px;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: grab;
+      position: relative;
+      background: #0f172a;
+      background-image:
+        radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+        linear-gradient(rgba(30, 41, 59, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.5) 1px, transparent 1px);
+      background-size: 100%, 100%, 20px 20px, 20px 20px;
+    }
+
+    #ast-container:active {
+      cursor: grabbing;
+    }
+
+    #ast-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ast-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .ast-ctrl-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      transition: all 0.15s;
+    }
+
+    .ast-ctrl-btn:hover {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-color: #475569;
+    }
+
+    .ast-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      z-index: 10;
+      max-width: 70%;
+    }
+
+    .ast-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #1e293b;
+      backdrop-filter: blur(8px);
+      font-size: 10px;
+      color: #94a3b8;
+    }
+
+    .ast-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .ast-node-count {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #1e293b;
+      backdrop-filter: blur(8px);
+      font-size: 11px;
+      color: #94a3b8;
+      z-index: 10;
+    }
+
+    @keyframes astFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .ast-animated {
+      animation: astFadeIn 0.4s ease;
+    }
+
+    .ast-tooltip {
+      position: absolute;
+      padding: 6px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      max-width: 200px;
+      display: none;
+    }
+
+    /* ── Optimizer ─────────────────────────── */
+    .code-compare {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .code-col {
+      flex: 1;
+    }
+
+    .code-col h4 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .code-col pre {
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 80px;
+    }
+
+    .code-original pre {
+      background: #1e293b;
+      border: 1px solid #1f2933;
+      color: #e5e7eb;
+    }
+
+    .code-optimized pre {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+    }
+
+    .opt-card {
+      border: 1px solid #1f2933;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #1e293b;
+    }
+
+    .opt-card .opt-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .opt-card .opt-change {
+      font-size: 12px;
+      font-family: monospace;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+
+    .opt-card .opt-explain {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    /* ── Pipeline Status Bar ────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 20px;
+      background: #111827;
+      border-top: 1px solid #1f2933;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stage {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .stage.success {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    .stage.error {
+      background: rgba(220, 38, 38, 0.15);
+      color: #f87171;
+    }
+
+    .arrow {
+      color: #4b5563;
+      font-size: 10px;
+    }
+
+    /* ── Spinner ──────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── FIRST/FOLLOW side-by-side ────────── */
+    .ff-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+    }
+
+    /* ── Highlight unused rows ────────────── */
+    tr.unused-row td {
+      background: rgba(234, 179, 8, 0.1);
+    }
+
+    /* ── Grammar Lab Layout ────────────────── */
+    .grammar-lab {
+      display: none;
+      height: calc(100vh - 60px);
+    }
+
+    .grammar-lab.active {
+      display: flex;
+    }
+
+    .compiler-view {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px);
+    }
+
+    .compiler-view.hidden {
+      display: none;
+    }
+
+    .gl-left {
+      width: 38%;
+      border-right: 1px solid #1f2933;
+      display: flex;
+      flex-direction: column;
+      background: #111827;
+    }
+
+    .gl-right {
+      width: 62%;
+      display: flex;
+      flex-direction: column;
+      background: #111827;
+      overflow: auto;
+    }
+
+    .gl-right-inner {
+      padding: 20px;
+    }
+
+    .gt-section {
+      margin-bottom: 18px;
+    }
+
+    .gt-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gt-textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid #1f2933;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      background: #0d1117;
+      color: #e5e7eb;
+      resize: vertical;
+      outline: none;
+    }
+
+    .gt-textarea:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    .gt-input {
+      width: 100%;
+      border: 1px solid #1f2933;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      background: #0d1117;
+      color: #e5e7eb;
+      outline: none;
+    }
+
+    .gt-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    .gt-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .gt-results {
+      border-top: 1px solid #1f2933;
+      padding-top: 16px;
+    }
+
+    .alert-box {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .alert-danger {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .alert-warning {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    .gt-prod {
+      font-family: monospace;
+      font-size: 13px;
+      padding: 4px 0;
+      color: #e5e7eb;
+    }
+
+    .gt-prod .nt {
+      font-weight: 600;
+      color: #818cf8;
+    }
+
+    .gt-prod .arrow {
+      color: #94a3b8;
+      margin: 0 6px;
+    }
+
+    .gl-panel-label {
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gl-panel-label .badge-ll1 {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(96, 165, 250, 0.2);
+      color: #93c5fd;
+    }
+
+    .file-import-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border: 1px solid #1f2933;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .file-import-label:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .file-import-label input {
+      display: none;
+    }
+
+    /* ── Bottom Navigation Bar ───────────── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+      border-top: 1px solid #6366f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 16px;
+      z-index: 9999;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .bottom-nav-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bottom-nav-divider {
+      width: 1px;
+      height: 32px;
+      background: #334155;
+      margin: 0 12px;
+    }
+
+    .bnav-btn {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: #9ca3af;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bnav-btn:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: #e5e7eb;
+    }
+
+    .bnav-btn.active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #818cf8;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .bnav-mode-btn {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #334155;
+      background: transparent;
+      color: #9ca3af;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .bnav-mode-btn:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    .bnav-mode-btn:last-child {
+      border-radius: 0 8px 8px 0;
+      border-left: 0;
+    }
+
+    .bnav-mode-btn.active {
+      background: linear-gradient(135deg, #6366f1, #7c3aed);
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    .bnav-mode-btn:hover:not(.active) {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+
+    /* ── Responsive ────────────────────── */
+    @media (max-width: 768px) {
+      .main { flex-direction: column; }
+      .panel-left, .panel-right { width: 100%; }
+      .gl-left, .gl-right { width: 100%; }
+      .grammar-lab.active { flex-direction: column; }
+      .bottom-nav { height: auto; min-height: 60px; flex-wrap: wrap; padding: 8px; gap: 6px; }
+      .bnav-btn { padding: 6px 10px; font-size: 11px; }
+      .header-actions { flex-wrap: wrap; }
+      .header { flex-wrap: wrap; gap: 8px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── HEADER ──────────────────────────── -->
+  <header class="header">
+    <h1>PARSE<span>X</span> Compiler</h1>
+    <div class="header-actions" id="compilerActions">
+      <button class="btn btn-primary" id="runBtn" onclick="runCompiler()">▶ Run</button>
+      <button class="btn" onclick="clearEditor()">Clear</button>
+      <div class="dropdown">
+        <button class="btn" onclick="toggleDropdown()">Load Example ▾</button>
+        <div class="dropdown-menu" id="exampleMenu">
+          <button class="dropdown-item" onclick="loadExample(1)">1. Simple — O(1)</button>
+          <button class="dropdown-item" onclick="loadExample(2)">2. Single Loop — O(n)</button>
+          <button class="dropdown-item" onclick="loadExample(3)">3. Nested Loops — O(n²)</button>
+          <button class="dropdown-item" onclick="loadExample(4)">4. If-Else Branching</button>
+          <button class="dropdown-item" onclick="loadExample(5)">5. While Loop Counter</button>
+          <button class="dropdown-item" onclick="loadExample(6)">6. Function Definition</button>
+        </div>
+      </div>
+      <label class="file-import-label"
+        style="border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#e2e8f0;">
+        📂 Import
+        <input type="file" accept=".txt,.tl,.tiny" onchange="importCompilerFile(event)" />
+      </label>
+    </div>
+    <div class="header-actions" id="grammarActions" style="display:none;">
+      <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeGrammar()">▶ Analyze</button>
+      <button class="btn"
+        onclick="document.getElementById('grammarEditor').value='';document.getElementById('grammarInput').value=''">Clear</button>
+      <div class="dropdown">
+        <button class="btn" onclick="toggleGrammarDropdown()">Load Example ▾</button>
+        <div class="dropdown-menu" id="grammarExampleMenu">
+          <button class="dropdown-item" onclick="loadGrammarExample(1)">1. Arithmetic Expressions</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(2)">2. Balanced Parentheses</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(3)">3. If-Else Statements</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(4)">4. Assignment + Print</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(5)">5. List of Items</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(6)">6. Unary Operators</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(7)">7. Function Calls</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(8)">⚠️ 8. Non-LL(1) Left Recursive</button>
+        </div>
+      </div>
+      <label class="file-import-label"
+        style="border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#e2e8f0;">
+        📂 Import
+        <input type="file" id="grammarFileInput" accept=".txt,.cfg,.grammar,.bnf,.g"
+          onchange="importGrammarFile(event)" />
+      </label>
+    </div>
+  </header>
+
+  <!-- ── COMPILER VIEW ──────────────────── -->
+  <div class="compiler-view" id="compilerView">
+    <div class="main">
+      <!-- Left Panel: Editor -->
+      <div class="panel-left">
+        <div class="panel-label">Source Code</div>
+        <div class="editor-wrap">
+          <div class="line-numbers" id="lineNumbers"></div>
+          <textarea id="codeEditor" spellcheck="false" placeholder="Write code here..."></textarea>
+        </div>
+        <div class="editor-footer">
+          <span id="lineCount">Lines: 0</span>
+          <span id="charCount">Chars: 0</span>
+        </div>
+      </div>
+
+      <!-- Right Panel: Tabs -->
+      <div class="panel-right">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('tokens')">Tokens</button>
+          <button class="tab" onclick="switchTab('parsetable')">Parse Table</button>
+          <button class="tab" onclick="switchTab('symtable')">Symbol Table</button>
+          <button class="tab" onclick="switchTab('ast')">AST</button>
+          <!--<button class="tab" onclick="switchTab('optimizer')">Optimizer</button>-->
+        </div>
+
+        <!-- Tab 1: Tokens -->
+        <div class="tab-content active" id="tab-tokens">
+          <div class="info-box">The lexer breaks source code into tokens — the smallest meaningful units. Each token has
+            a type (keyword, operator, etc.) and a value.</div>
+          <div id="tokens-output" class="no-data">Run the compiler to see tokens.</div>
+        </div>
+
+        <!-- Tab 2: Parse Table -->
+        <div class="tab-content" id="tab-parsetable">
+          <div class="info-box">The LL(1) Parsing Table tells the parser which production rule to use. Given the current
+            non-terminal on the stack and the current input token, M[A, a] gives the rule to expand.</div>
+          <div id="pt-output" class="no-data">Run the compiler to see the parse table.</div>
+        </div>
+
+        <!-- Tab 3: Symbol Table -->
+        <div class="tab-content" id="tab-symtable">
+          <div class="info-box">The symbol table records every variable and function declared in the program, their
+            type, the scope they belong to, where they were declared, and how many times they are referenced.</div>
+          <div id="st-output" class="no-data">Run the compiler to see the symbol table.</div>
+        </div>
+
+        <!-- Tab 4: AST -->
+        <div class="tab-content" id="tab-ast">
+          <div class="info-box">The Abstract Syntax Tree (AST) is a tree representation of the program structure. Each
+            node represents a language construct. Click any node to expand or collapse its children.</div>
+          <div id="ast-output">
+            <div id="ast-container" class="ast-animated">
+              <svg id="ast-svg"></svg>
+              <div class="ast-controls">
+                <button class="ast-ctrl-btn" onclick="astZoom(0.9)" title="Zoom In">+</button>
+                <button class="ast-ctrl-btn" onclick="astZoom(1.1)" title="Zoom Out">−</button>
+                <button class="ast-ctrl-btn" onclick="astReset()" title="Reset View">⟲</button>
+                <button class="ast-ctrl-btn" onclick="astExpandAll()" title="Expand All">⊞</button>
+                <button class="ast-ctrl-btn" onclick="astCollapseAll()" title="Collapse All">⊟</button>
+              </div>
+              <div class="ast-node-count" id="astNodeCount">Nodes: 0</div>
+              <div class="ast-legend" id="astLegend"></div>
+              <div class="ast-tooltip" id="astTooltip"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Optimizer -->
+        <div class="tab-content" id="tab-optimizer">
+          <div class="info-box">The optimizer applies safe, semantics-preserving transformations to improve code
+            efficiency. Constant folding evaluates expressions at compile time. Dead code elimination removes
+            unreachable statements.</div>
+          <div id="op-output" class="no-data">Run the compiler to see optimizations.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATUS BAR ─────────────────────── -->
+    <div class="status-bar" id="statusBar">
+      <div class="pipeline">
+        <span class="stage" id="s-lexer">Lexer</span><span class="arrow">→</span>
+        <span class="stage" id="s-parser">Parser</span><span class="arrow">→</span>
+        <span class="stage" id="s-ast">AST</span><span class="arrow">→</span>
+        <span class="stage" id="s-analyzer">Analyzer</span><span class="arrow">→</span>
+        <span class="stage" id="s-optimizer">Optimizer</span>
+      </div>
+      <span id="compileTime"></span>
+    </div>
+  </div><!-- end compiler-view -->
+
+  <!-- ── GRAMMAR LAB VIEW ─────────────────── -->
+  <div class="grammar-lab" id="grammarLab">
+    <!-- Left Panel: Grammar Editor -->
+    <div class="gl-left">
+      <div class="gl-panel-label">
+        Grammar Editor
+        <span class="badge-ll1">LL(1) Analysis</span>
+      </div>
+      <div style="padding:16px;flex:1;overflow:auto;">
+        <div class="gt-section">
+          <h3>Grammar Productions</h3>
+          <textarea id="grammarEditor" class="gt-textarea" spellcheck="false"
+            placeholder="E -> T E'&#10;E' -> + T E' | ε&#10;T -> F T'&#10;T' -> * F T' | ε&#10;F -> ( E ) | id"></textarea>
+        </div>
+
+        <div class="gt-section">
+          <h3>🔤 Input String <span style="font-weight:400;color:#94a3b8;font-size:12px;">(space-separated tokens,
+              optional)</span></h3>
+          <input type="text" id="grammarInput" class="gt-input" placeholder="e.g. id + id * id" />
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- Right Panel: Analysis Results -->
+    <div class="gl-right">
+      <div class="gl-panel-label">
+        📊 Analysis Results
+      </div>
+      <div class="gl-right-inner" id="gt-results">
+        <div class="no-data" style="padding:60px 20px;">
+          <div style="font-size:48px;margin-bottom:12px;">📐</div>
+          <div style="font-size:16px;color:#64748b;font-weight:600;margin-bottom:6px;">Grammar</div>
+          <div style="font-size:13px;color:#94a3b8;">Enter a grammar on the left and click <strong>Analyze</strong> to
+            see FIRST/FOLLOW sets, parse table, and conflict detection.</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- end grammar-lab -->
+
+  <script>
+    // ── Examples ──────────────────────────────
+    const EXAMPLES = {
+      1: `int x = 5;\nint y = 10;\nint z = x + y;\nprint(z);`,
+      2: `int i = 0;\nint sum = 0;\nwhile (i < n) {\nsum = sum + i;\ni = i + 1;\n}\nprint(sum);`,
+      3: `func compute(int n) {\nint i = 0;\nfor (i = 0; i < n; i = i + 1) {\nint j = 0;\nfor (j = 0; j < n; j = j + 1) {\nint val = i + j;\n}\n}\nreturn 0;\n}`,
+      4: `int score = 85;\nif (score > 90) {\nprint(1);\n} else {\nif (score > 60) {\nprint(2);\n} else {\nprint(3);\n}\n}`,
+      5: `int count = 0;\nint limit = 100;\nwhile (count < limit) {\ncount = count + 1;\n}\nprint(count);`,
+      6: `func factorial(int n) {\nint result = 1;\nint i = 1;\nfor (i = 1; i < n; i = i + 1) {\nresult = result * i;\n}\nreturn result;\n}\nint ans = factorial(5);\nprint(ans);`
+    };
+
+    // ── Editor ────────────────────────────────
+    const editor = document.getElementById('codeEditor');
+    const lineNums = document.getElementById('lineNumbers');
+
+    function updateLineNumbers() {
+      const lines = editor.value.split('\n');
+      const count = lines.length;
+      lineNums.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.textContent = i;
+        div.dataset.line = i;
+        lineNums.appendChild(div);
+      }
+      document.getElementById('lineCount').textContent = `Lines: ${count}`;
+      document.getElementById('charCount').textContent = `Chars: ${editor.value.length}`;
+    }
+
+    editor.addEventListener('input', updateLineNumbers);
+    editor.addEventListener('scroll', () => { lineNums.scrollTop = editor.scrollTop; });
+    updateLineNumbers();
+
+    // ── Dropdown ──────────────────────────────
+    function toggleDropdown() {
+      document.getElementById('exampleMenu').classList.toggle('show');
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.getElementById('exampleMenu').classList.remove('show');
+      }
+    });
+
+    function loadExample(n) {
+      const editor = document.getElementById('codeEditor');
+      editor.value = EXAMPLES[n] || '';
+      updateLineNumbers();
+      document.getElementById('exampleMenu').classList.remove('show');
+    }
+
+    function importCompilerFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        document.getElementById('codeEditor').value = e.target.result;
+        updateLineNumbers();
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function clearEditor() {
+      editor.value = '';
+      updateLineNumbers();
+      resetOutputs();
+    }
+
+    // ── Tab Switching ─────────────────────────
+    function switchTab(id) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      document.querySelectorAll('.bnav-tab').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.querySelector(`.bnav-tab[data-tab="${id}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // ── Reset ─────────────────────────────────
+    function resetOutputs() {
+      document.getElementById('tokens-output').innerHTML = '<div class="no-data">Run the compiler to see tokens.</div>';
+      document.getElementById('pt-output').innerHTML = '<div class="no-data">Run the compiler to see the parse table.</div>';
+      document.getElementById('st-output').innerHTML = '<div class="no-data">Run the compiler to see the symbol table.</div>';
+      document.getElementById('op-output').innerHTML = '<div class="no-data">Run the compiler to see optimizations.</div>';
+      document.getElementById('ast-svg').innerHTML = '';
+      resetStages();
+    }
+
+    function resetStages() {
+      ['s-lexer', 's-parser', 's-ast', 's-analyzer', 's-optimizer'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'stage';
+      });
+      document.getElementById('compileTime').textContent = '';
+    }
+
+    // ── Escape HTML ───────────────────────────
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // ── Compile ───────────────────────────────
+async function runCompiler() {
+  const btn = document.getElementById('runBtn');
+  const code = editor.value;
+
+  if (!code.trim()) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running';
+  resetStages();
+  resetOutputs();
+
+  try {
+    const res = await fetch('/compile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+
+    // 🔥 CRITICAL FIX START
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("❌ Backend returned NON-JSON:", text);
+
+      document.getElementById('tokens-output').innerHTML = `
+        <div style="background:#fee2e2;border:1px solid #fca5a5;
+        border-radius:6px;padding:12px;color:#991b1b;">
+        <strong>⚠️ Server Error:</strong><br>
+        Backend is returning HTML instead of JSON.<br><br>
+        <b>Check Flask terminal for error.</b>
+        </div>
+      `;
+
+      return;
+    }
+    // 🔥 CRITICAL FIX END
+
+    const hasTokens = data.tokens && data.tokens.length > 0;
+    const hasAst = data.ast && data.ast.type;
+    const hasOptimizer = data.optimizer && data.optimizer.original_code !== undefined;
+    const isError = data.status === 'error';
+
+    setStage('s-lexer', hasTokens, isError && !hasTokens);
+    setStage('s-parser', hasAst && !data.error?.startsWith('Parser'), isError && data.error?.startsWith('Parser'));
+    setStage('s-ast', hasAst, isError && data.error?.startsWith('AST'));
+    setStage('s-optimizer', hasOptimizer, isError && data.error?.startsWith('Optimizer'));
+
+    document.getElementById('compileTime').textContent =
+      `Compiled in ${data.compile_time_ms}ms`;
+
+    renderTokens(data.tokens || []);
+    renderParseTable(data.parse_table || {});
+    renderAST(data.ast || {});
+    renderSymbolTable(data.symbol_table || []);
+    renderOptimizer(data.optimizer || {});
+
+    if (isError && data.error) {
+      document.getElementById('tokens-output').innerHTML =
+        `<div style="background:#fee2e2;border:1px solid #fca5a5;
+        border-radius:6px;padding:12px;color:#991b1b;">
+        <strong>❌ Compile Error:</strong><br>
+        <span style="font-family:monospace">${esc(data.error)}</span>
+        </div>`;
+    }
+
+    switchTab('tokens');
+
+  } catch (err) {
+    console.error(err);
+
+    document.getElementById('tokens-output').innerHTML = `
+      <div style="background:#fee2e2;border:1px solid #fca5a5;
+      border-radius:6px;padding:12px;color:#991b1b;">
+      <strong>❌ Network Error:</strong><br>
+      ${err.message}
+      </div>
+    `;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '▶ Run';
+  }
+}
+
+    function setStage(id, success, error) {
+      const el = document.getElementById(id);
+      if (success) { el.className = 'stage success'; el.innerHTML = el.textContent.replace(/ [✅❌]/g, '') + ' ✅'; }
+      else if (error) { el.className = 'stage error'; el.innerHTML = el.textContent.replace(/ [✅❌]/g, '') + ' ❌'; }
+    }
+
+    // ── Tab Renderers ─────────────────────────
+
+    // Tab 1: Tokens
+    function renderTokens(tokens) {
+      if (!tokens.length) return;
+      const pillClass = {
+        KEYWORD: 'pill-blue', OPERATOR: 'pill-orange', IDENTIFIER: 'pill-gray',
+        INTEGER: 'pill-green', FLOAT: 'pill-green', STRING: 'pill-purple', DELIMITER: 'pill-gray', EOF: 'pill-gray'
+      };
+      let html = '<table class="data-table"><thead><tr><th>#</th><th>Type</th><th>Value</th><th>Line</th></tr></thead><tbody>';
+      tokens.forEach((t, i) => {
+        const cls = pillClass[t.type] || 'pill-gray';
+        html += `<tr><td>${i + 1}</td><td><span class="pill ${cls}">${esc(t.type)}</span></td><td>${esc(t.value)}</td><td>${t.line}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('tokens-output').innerHTML = html;
+    }
+
+    // Tab 2: Parse Table
+    function renderParseTable(table) {
+      if (!Object.keys(table).length) return;
+      // Collect all terminals
+      const termSet = new Set();
+      for (const nt of Object.keys(table)) {
+        for (const t of Object.keys(table[nt])) termSet.add(t);
+      }
+      const terminals = [...termSet].sort();
+      let html = '<div class="parse-table-wrap"><table class="parse-table"><thead><tr><th></th>';
+      terminals.forEach(t => { html += `<th>${esc(t)}</th>`; });
+      html += '</tr></thead><tbody>';
+      for (const nt of Object.keys(table).sort()) {
+        html += `<tr><th>${esc(nt)}</th>`;
+        terminals.forEach(t => {
+          const entry = table[nt][t];
+          if (entry) {
+            html += `<td title="${esc(entry)}">${esc(entry)}</td>`;
+          } else {
+            html += '<td class="empty-cell"></td>';
+          }
+        });
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      document.getElementById('pt-output').innerHTML = html;
+    }
+
+    // Tab 4: AST (Premium SVG Tree)
+    const AST_NODE_STYLES = {
+      Program: { gradient: ['#2563eb', '#1d4ed8'], icon: '📦', label: 'Program' },
+      VarDecl: { gradient: ['#7c3aed', '#6d28d9'], icon: '📝', label: 'Variable' },
+      Assignment: { gradient: ['#0891b2', '#0e7490'], icon: '✏️', label: 'Assignment' },
+      WhileStmt: { gradient: ['#059669', '#047857'], icon: '🔄', label: 'While' },
+      ForStmt: { gradient: ['#059669', '#047857'], icon: '🔁', label: 'For' },
+      IfStmt: { gradient: ['#d97706', '#b45309'], icon: '❓', label: 'If' },
+      FuncDecl: { gradient: ['#dc2626', '#b91c1c'], icon: '⚙️', label: 'Function' },
+      BinaryOp: { gradient: ['#6366f1', '#4f46e5'], icon: '➕', label: 'Binary Op' },
+      Literal: { gradient: ['#374151', '#1f2937'], icon: '🔢', label: 'Literal' },
+      Identifier: { gradient: ['#475569', '#334155'], icon: '🏷️', label: 'Identifier' },
+      Block: { gradient: ['#6366f1', '#4f46e5'], icon: '📁', label: 'Block' },
+      ReturnStmt: { gradient: ['#dc2626', '#b91c1c'], icon: '↩️', label: 'Return' },
+      PrintStmt: { gradient: ['#0891b2', '#0e7490'], icon: '🖨️', label: 'Print' },
+      Condition: { gradient: ['#d97706', '#b45309'], icon: '⚖️', label: 'Condition' },
+      Param: { gradient: ['#7c3aed', '#6d28d9'], icon: '📋', label: 'Parameter' },
+      FuncCall: { gradient: ['#e11d48', '#be123c'], icon: '📞', label: 'Call' }
+    };
+    const NODE_W = 130, NODE_H = 40, H_GAP = 20, V_GAP = 60;
+    let astPan = { x: 0, y: 0 }, astDrag = null, collapsed = new Set();
+    let astTotalW = 800, astTotalH = 500;
+
+    function countNodes(node) {
+      if (!node) return 0;
+      let n = 1;
+      (node.children || []).forEach(c => { n += countNodes(c); });
+      return n;
+    }
+
+    function collectTypes(node, set) {
+      if (!node) return;
+      set.add(node.type);
+      (node.children || []).forEach(c => collectTypes(c, set));
+    }
+
+    function renderAST(ast) {
+      if (!ast || !ast.type) {
+        document.getElementById('ast-svg').innerHTML = '';
+        document.getElementById('astNodeCount').textContent = 'Nodes: 0';
+        document.getElementById('astLegend').innerHTML = '';
+        return;
+      }
+      collapsed.clear();
+      astPan = { x: 20, y: 20 };
+
+      // Node count
+      const total = countNodes(ast);
+      document.getElementById('astNodeCount').textContent = `🌳 ${total} nodes`;
+
+      // Legend
+      const types = new Set();
+      collectTypes(ast, types);
+      let legendHtml = '';
+      types.forEach(t => {
+        const s = AST_NODE_STYLES[t] || { gradient: ['#6b7280', '#4b5563'], icon: '•', label: t };
+        legendHtml += `<div class="ast-legend-item"><span class="ast-legend-dot" style="background:${s.gradient[0]}"></span>${s.icon} ${s.label}</div>`;
+      });
+      document.getElementById('astLegend').innerHTML = legendHtml;
+
+      drawTree(ast);
+    }
+
+    function assignIds(node, id) {
+      if (!node) return;
+      node._id = id;
+      (node.children || []).forEach((c, i) => assignIds(c, id + '-' + i));
+    }
+
+    function computeLayout(node) {
+      if (!node) return { w: 0, h: 0 };
+      const children = node.children || [];
+      if (children.length === 0 || collapsed.has(node._id)) {
+        node._w = NODE_W;
+        node._h = NODE_H;
+        return { w: NODE_W, h: NODE_H };
+      }
+      let totalW = 0, maxH = 0;
+      children.forEach(c => {
+        const s = computeLayout(c);
+        totalW += s.w;
+        maxH = Math.max(maxH, s.h);
+      });
+      totalW += (children.length - 1) * H_GAP;
+      node._w = Math.max(NODE_W, totalW);
+      node._h = NODE_H + V_GAP + maxH;
+      return { w: node._w, h: node._h };
+    }
+
+    function positionNodes(node, x, y) {
+      if (!node) return;
+      node._x = x + node._w / 2 - NODE_W / 2;
+      node._y = y;
+      const children = node.children || [];
+      if (children.length === 0 || collapsed.has(node._id)) return;
+      let cx = x;
+      children.forEach(c => {
+        positionNodes(c, cx, y + NODE_H + V_GAP);
+        cx += c._w + H_GAP;
+      });
+    }
+
+    function drawTree(ast) {
+      assignIds(ast, 'r');
+      computeLayout(ast);
+      positionNodes(ast, 0, 0);
+
+      const svg = document.getElementById('ast-svg');
+      let defs = '<defs>';
+      defs += '<filter id="nodeShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.5)" flood-opacity="0.5"/></filter>';
+      defs += '<filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+
+      // Generate gradient defs for each node type
+      const usedTypes = new Set();
+      collectTypes(ast, usedTypes);
+      usedTypes.forEach(t => {
+        const s = AST_NODE_STYLES[t] || { gradient: ['#6b7280', '#4b5563'] };
+        defs += `<linearGradient id="grad-${t.replace(/[^a-zA-Z]/g, '')}" x1="0" y1="0" x2="1" y2="1">`;
+        defs += `<stop offset="0%" stop-color="${s.gradient[0]}"/>`;
+        defs += `<stop offset="100%" stop-color="${s.gradient[1]}"/>`;
+        defs += '</linearGradient>';
+      });
+      defs += '</defs>';
+
+      let svgContent = defs;
+
+      function drawNode(node) {
+        if (!node) return;
+        const cx = node._x + NODE_W / 2;
+        const cy = node._y + NODE_H / 2;
+        const style = AST_NODE_STYLES[node.type] || { gradient: ['#6b7280', '#4b5563'], icon: '•' };
+        const gradId = `grad-${node.type.replace(/[^a-zA-Z]/g, '')}`;
+        const children = node.children || [];
+
+        // Draw curved bezier connections
+        if (!collapsed.has(node._id)) {
+          children.forEach(c => {
+            if (!c) return;
+            const ccx = c._x + NODE_W / 2;
+            const ccy = c._y;
+            const startY = node._y + NODE_H;
+            const midY = startY + (ccy - startY) / 2;
+            svgContent += `<path d="M${cx},${startY} C${cx},${midY} ${ccx},${midY} ${ccx},${ccy}" fill="none" stroke="rgba(148,163,184,0.3)" stroke-width="2"/>`;
+            // Glow dot at connection point
+            svgContent += `<circle cx="${ccx}" cy="${ccy}" r="3" fill="${style.gradient[0]}" opacity="0.5"/>`;
+          });
+        }
+
+        const label = node.value ? `${node.type}: ${node.value}` : node.type;
+        const truncLabel = label.length > 18 ? label.substring(0, 17) + '…' : label;
+        const hasChildren = children.length > 0;
+        const isCollapsed = collapsed.has(node._id);
+        const childCount = children.length;
+
+        svgContent += `<g class="ast-node" data-id="${node._id}" data-type="${escSvg(node.type)}" data-value="${escSvg(node.value || '')}" data-children="${childCount}" style="cursor:${hasChildren ? 'pointer' : 'default'}" onclick="toggleNode('${node._id}')" onmouseover="showAstTooltip(event, this)" onmouseout="hideAstTooltip()">`;
+
+        // Node background with gradient, shadow, and rounded corners
+        svgContent += `<rect x="${node._x}" y="${node._y}" width="${NODE_W}" height="${NODE_H}" rx="10" fill="url(#${gradId})" filter="url(#nodeShadow)" stroke="${isCollapsed ? '#fbbf24' : 'rgba(255,255,255,0.1)'}" stroke-width="${isCollapsed ? 2 : 1}"/>`;
+
+        // Icon
+        svgContent += `<text x="${node._x + 12}" y="${cy + 4}" font-size="12" fill="#fff">${style.icon || '•'}</text>`;
+
+        // Label text
+        svgContent += `<text x="${node._x + 26}" y="${cy + 4}" fill="#fff" font-size="11" font-weight="500" font-family="Segoe UI, system-ui, sans-serif">${escSvg(truncLabel)}</text>`;
+
+        // Collapse/expand badge
+        if (hasChildren) {
+          const badgeX = node._x + NODE_W - 18;
+          const badgeY = node._y + 4;
+          svgContent += `<rect x="${badgeX}" y="${badgeY}" width="14" height="14" rx="4" fill="rgba(0,0,0,0.3)"/>`;
+          svgContent += `<text x="${badgeX + 7}" y="${badgeY + 11}" text-anchor="middle" fill="${isCollapsed ? '#fbbf24' : '#94a3b8'}" font-size="10" font-weight="700">${isCollapsed ? '+' : childCount}</text>`;
+        }
+
+        svgContent += '</g>';
+
+        if (!isCollapsed) {
+          children.forEach(c => drawNode(c));
+        }
+      }
+
+      drawNode(ast);
+
+      astTotalW = ast._w + 40;
+      astTotalH = ast._h + 40;
+      svg.setAttribute('viewBox', `${-astPan.x} ${-astPan.y} ${Math.max(astTotalW, 800)} ${Math.max(astTotalH, 500)}`);
+      svg.innerHTML = svgContent;
+
+      // Pan
+      const container = document.getElementById('ast-container');
+      container.onmousedown = (e) => {
+        if (e.target.closest('.ast-node')) return;
+        astDrag = { sx: e.clientX, sy: e.clientY, px: astPan.x, py: astPan.y };
+      };
+      container.onmousemove = (e) => {
+        if (!astDrag) return;
+        astPan.x = astDrag.px + (e.clientX - astDrag.sx);
+        astPan.y = astDrag.py + (e.clientY - astDrag.sy);
+        svg.setAttribute('viewBox', `${-astPan.x} ${-astPan.y} ${Math.max(astTotalW, 800)} ${Math.max(astTotalH, 500)}`);
+      };
+      container.onmouseup = () => { astDrag = null; };
+      container.onmouseleave = () => { astDrag = null; };
+      container.onwheel = (e) => {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 1.1 : 0.9;
+        astZoom(factor);
+      };
+
+      window._currentAst = ast;
+    }
+
+    function toggleNode(id) {
+      if (collapsed.has(id)) collapsed.delete(id);
+      else collapsed.add(id);
+      if (window._currentAst) drawTree(window._currentAst);
+    }
+
+    function astZoom(factor) {
+      const svg = document.getElementById('ast-svg');
+      const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+      vb[2] *= factor; vb[3] *= factor;
+      svg.setAttribute('viewBox', vb.join(' '));
+    }
+
+    function astReset() {
+      astPan = { x: 20, y: 20 };
+      collapsed.clear();
+      if (window._currentAst) drawTree(window._currentAst);
+    }
+
+    function astExpandAll() {
+      collapsed.clear();
+      if (window._currentAst) drawTree(window._currentAst);
+    }
+
+    function astCollapseAll() {
+      function addAll(node) {
+        if (!node) return;
+        const ch = node.children || [];
+        if (ch.length > 0) collapsed.add(node._id);
+        ch.forEach(c => addAll(c));
+      }
+      if (window._currentAst) {
+        addAll(window._currentAst);
+        // Keep root expanded
+        collapsed.delete('r');
+        drawTree(window._currentAst);
+      }
+    }
+
+    function showAstTooltip(event, el) {
+      const tip = document.getElementById('astTooltip');
+      const type = el.getAttribute('data-type');
+      const value = el.getAttribute('data-value');
+      const children = el.getAttribute('data-children');
+      let text = `<strong>${type}</strong>`;
+      if (value) text += `<br>Value: ${value}`;
+      text += `<br>Children: ${children}`;
+      tip.innerHTML = text;
+      tip.style.display = 'block';
+      // Position near mouse
+      const container = document.getElementById('ast-container');
+      const rect = container.getBoundingClientRect();
+      tip.style.left = (event.clientX - rect.left + 10) + 'px';
+      tip.style.top = (event.clientY - rect.top - 40) + 'px';
+    }
+
+    function hideAstTooltip() {
+      document.getElementById('astTooltip').style.display = 'none';
+    }
+
+    function escSvg(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    // Tab 6: Symbol Table
+    function renderSymbolTable(table) {
+      if (!table.length) return;
+      let html = '<table class="data-table"><thead><tr><th>Name</th><th>Type</th><th>Scope</th><th>Line Declared</th><th>References</th></tr></thead><tbody>';
+      table.forEach(e => {
+        const cls = e.references === 0 ? ' class="unused-row"' : '';
+        html += `<tr${cls}><td><strong>${esc(e.name)}</strong></td><td>${esc(e.type)}</td><td>${esc(e.scope)}</td><td>${e.line}</td><td>${e.references}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('st-output').innerHTML = html;
+    }
+
+    // Tab 9: Optimizer
+    function renderOptimizer(opt) {
+      if (opt.original_code === undefined) return;
+      let html = '<div class="code-compare"><div class="code-col code-original"><h4>Original Code</h4><pre>' + esc(opt.original_code) + '</pre></div>';
+      html += '<div class="code-col code-optimized"><h4>Optimized Code</h4><pre>' + esc(opt.optimized_code) + '</pre></div></div>';
+      const applied = opt.optimizations_applied || [];
+      if (!applied.length) {
+        html += '<div style="text-align:center;padding:20px"><span class="badge badge-success">✅ No optimizations applicable to this code.</span></div>';
+      } else {
+        applied.forEach(o => {
+          const typeClass = {
+            'Constant Folding': 'pill-blue', 'Dead Code Elimination': 'pill-red',
+            'Unused Variable': 'pill-yellow', 'Loop Invariant': 'pill-purple'
+          }[o.type] || 'pill-gray';
+          html += `<div class="opt-card"><div class="opt-header"><span class="pill ${typeClass}">${esc(o.type)}</span><span style="color:#94a3b8;font-size:12px">Line ${o.line}</span></div>`;
+          html += `<div class="opt-change"><span style="color:#dc2626">${esc(o.original)}</span> → <span style="color:#16a34a">${esc(o.optimized)}</span></div>`;
+          html += `<div class="opt-explain">${esc(o.explanation)}</div></div>`;
+        });
+      }
+      document.getElementById('op-output').innerHTML = html;
+    }
+
+    // ════════════════════════════════════════════
+    // Tab 10: Grammar Tool
+    // ════════════════════════════════════════════
+
+    const GRAMMAR_EXAMPLES = {
+      1: {
+        name: 'Arithmetic Expressions',
+        grammar: `E -> T EP\nEP -> + T EP | ε\nT -> F TP\nTP -> * F TP | ε\nF -> ( E ) | id`,
+        input: 'id + id * id'
+      },
+      2: {
+        name: 'Balanced Parentheses',
+        grammar: `S -> ( S ) S | ε`,
+        input: '( ( ) ) ( )'
+      },
+      3: {
+        name: 'If-Else Statements',
+        grammar: `S -> if E then S SP\nSP -> else S | ε\nE -> id`,
+        input: 'if id then if id then id else id'
+      },
+      4: {
+        name: 'Assignment + Print',
+        grammar: `P -> S P | ε\nS -> id = E ; | print E ;\nE -> id | num`,
+        input: 'id = num ; print id ;'
+      },
+      5: {
+        name: 'List of Items',
+        grammar: `L -> E LP\nLP -> , E LP | ε\nE -> id | num | ( L )`,
+        input: 'id , num , ( id , num )'
+      },
+      6: {
+        name: 'Unary Operators',
+        grammar: `E -> T EP\nEP -> + T EP | - T EP | ε\nT -> U F\nU -> - | ε\nF -> ( E ) | num`,
+        input: '- num + num'
+      },
+      7: {
+        name: 'Function Calls',
+        grammar: `S -> id ( A )\nA -> E AL | ε\nAL -> , E AL | ε\nE -> id | num`,
+        input: 'id ( id , num , id )'
+      },
+      8: {
+        name: 'Non-LL(1) — Left Recursive',
+        grammar: `E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id`,
+        input: 'id + id'
+      }
+    };
+
+    // ── Mode Switching ────────────────────────────
+    function switchMode(mode) {
+      const compView = document.getElementById('compilerView');
+      const gramLab = document.getElementById('grammarLab');
+      const actionsC = document.getElementById('compilerActions');
+      const actionsG = document.getElementById('grammarActions');
+      const statusBar = document.getElementById('statusBar');
+      const bnModeC = document.getElementById('bnModeCompiler');
+      const bnModeG = document.getElementById('bnModeGrammar');
+      const compTabsGroup = document.getElementById('compilerTabs');
+
+      if (mode === 'grammar') {
+        compView.classList.add('hidden');
+        gramLab.classList.add('active');
+        bnModeC.classList.remove('active');
+        bnModeG.classList.add('active');
+        actionsC.style.display = 'none';
+        actionsG.style.display = 'flex';
+        statusBar.style.display = 'none';
+        compTabsGroup.style.display = 'none';
+      } else {
+        compView.classList.remove('hidden');
+        gramLab.classList.remove('active');
+        bnModeC.classList.add('active');
+        bnModeG.classList.remove('active');
+        actionsC.style.display = 'flex';
+        actionsG.style.display = 'none';
+        statusBar.style.display = 'flex';
+        compTabsGroup.style.display = 'flex';
+      }
+    }
+
+    function toggleGrammarDropdown() {
+      document.getElementById('grammarExampleMenu').classList.toggle('show');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.getElementById('grammarExampleMenu')?.classList.remove('show');
+      }
+    }, true);
+
+    function loadGrammarExample(n) {
+      const ex = GRAMMAR_EXAMPLES[n];
+      if (!ex) return;
+      document.getElementById('grammarEditor').value = ex.grammar;
+      document.getElementById('grammarInput').value = ex.input;
+      document.getElementById('grammarExampleMenu').classList.remove('show');
+    }
+
+    async function analyzeGrammar() {
+      const btn = document.getElementById('analyzeBtn');
+      const grammar = document.getElementById('grammarEditor').value;
+      const inputStr = document.getElementById('grammarInput').value;
+
+      if (!grammar.trim()) { alert('Please enter a grammar.'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+      try {
+        const res = await fetch('/grammar-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grammar, input_string: inputStr })
+        });
+        const data = await res.json();
+        renderGrammarResults(data);
+      } catch (err) {
+        document.getElementById('gt-results').innerHTML = `<div class="alert-box alert-danger">Error: ${esc(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = ' Analyze';
+      }
+    }
+
+    function importGrammarFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        document.getElementById('grammarEditor').value = e.target.result;
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // reset so same file can be re-imported
+    }
+
+    function renderGrammarResults(data) {
+      const container = document.getElementById('gt-results');
+
+      if (data.status === 'error') {
+        container.innerHTML = `<div class="alert-box alert-danger">❌ ${esc(data.error)}</div>`;
+        return;
+      }
+
+      let html = '';
+
+      // ── LL(1) Status Badge ──────────────────
+      if (data.is_ll1) {
+        html += '<div class="alert-box alert-success"><strong>✅ This grammar IS LL(1).</strong> No conflicts detected.</div>';
+      } else {
+        html += '<div class="alert-box alert-danger"><strong>⚠️ This grammar is NOT LL(1).</strong> See conflicts/warnings below.</div>';
+      }
+
+      // ── Left Recursion Warnings ─────────────
+      if (data.left_recursion_warnings && data.left_recursion_warnings.length) {
+        html += '<div class="gt-section"><h3> Left Recursion Warnings</h3>';
+        data.left_recursion_warnings.forEach(w => {
+          html += `<div class="alert-box alert-warning">${esc(w.message)}</div>`;
+        });
+        html += '</div>';
+      }
+
+      // ── Parsed Grammar ──────────────────────
+      html += '<div class="gt-section"><h3> Parsed Grammar</h3>';
+      html += `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">Start symbol: <strong>${esc(data.start_symbol || '')}</strong> · ${(data.non_terminals || []).length} non-terminals · ${(data.terminals || []).length} terminals</div>`;
+      for (const nt of Object.keys(data.grammar_parsed || {})) {
+        const alts = data.grammar_parsed[nt];
+        html += `<div class="gt-prod"><span class="nt">${esc(nt)}</span><span class="arrow">→</span>${alts.map(a => esc(a)).join(' <span style="color:#94a3b8">|</span> ')}</div>`;
+      }
+      html += '</div>';
+
+      // ── FIRST & FOLLOW Sets (side-by-side) ──
+      html += '<div class="gt-section"><h3>FIRST & FOLLOW Sets</h3><div class="ff-grid"><div>';
+      html += '<table class="data-table"><thead><tr><th>Non-Terminal</th><th>FIRST Set</th></tr></thead><tbody>';
+      for (const nt of (data.non_terminals || [])) {
+        const vals = (data.first_sets[nt] || []).join(', ');
+        html += `<tr><td><strong>${esc(nt)}</strong></td><td>{ ${esc(vals)} }</td></tr>`;
+      }
+      html += '</tbody></table></div><div>';
+      html += '<table class="data-table"><thead><tr><th>Non-Terminal</th><th>FOLLOW Set</th></tr></thead><tbody>';
+      for (const nt of (data.non_terminals || [])) {
+        const vals = (data.follow_sets[nt] || []).join(', ');
+        html += `<tr><td><strong>${esc(nt)}</strong></td><td>{ ${esc(vals)} }</td></tr>`;
+      }
+      html += '</tbody></table></div></div></div>';
+
+      // ── Parse Table ─────────────────────────
+      html += '<div class="gt-section"><h3> LL(1) Parse Table</h3>';
+      const pt = data.parse_table || {};
+      const termSet = new Set();
+      for (const nt of Object.keys(pt)) {
+        for (const t of Object.keys(pt[nt])) termSet.add(t);
+      }
+      const terms = [...termSet].sort();
+      if (terms.length) {
+        html += '<div class="parse-table-wrap"><table class="parse-table"><thead><tr><th></th>';
+        terms.forEach(t => { html += `<th>${esc(t)}</th>`; });
+        html += '</tr></thead><tbody>';
+        for (const nt of (data.non_terminals || [])) {
+          html += `<tr><th>${esc(nt)}</th>`;
+          terms.forEach(t => {
+            const entry = (pt[nt] || {})[t];
+            if (entry) {
+              // Check if conflict
+              const isConflict = (data.conflicts || []).some(c => c.nonterminal === nt && c.terminal === t);
+              html += `<td${isConflict ? ' style="background:#fef2f2;color:#991b1b;font-weight:600"' : ''} title="${esc(entry)}">${esc(entry)}</td>`;
+            } else {
+              html += '<td class="empty-cell"></td>';
+            }
+          });
+          html += '</tr>';
+        }
+        html += '</tbody></table></div>';
+      } else {
+        html += '<div class="no-data">No parse table entries.</div>';
+      }
+      html += '</div>';
+
+      // ── Conflicts ──────────────────────────
+      if (data.conflicts && data.conflicts.length) {
+        html += '<div class="gt-section"><h3> LL(1) Conflicts</h3>';
+        data.conflicts.forEach(c => {
+          html += `<div class="alert-box alert-danger">`;
+          html += `<strong>M[${esc(c.nonterminal)}, ${esc(c.terminal)}]:</strong> `;
+          html += c.rules.map(r => `<code>${esc(r)}</code>`).join(' vs ');
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // ── Parse Steps ────────────────────────
+      if (data.parse_steps && data.parse_steps.length) {
+        html += '<div class="gt-section"><h3> Parse Trace</h3>';
+        html += '<div class="table-wrap"><table class="data-table"><thead><tr><th>Step</th><th>Stack</th><th>Remaining Input</th><th>Action</th></tr></thead><tbody>';
+        data.parse_steps.forEach(s => {
+          const isError = s.action.startsWith('Error');
+          const isAccept = s.action.includes('Accept');
+          const style = isError ? ' style="background:#fef2f2"' : isAccept ? ' style="background:#f0fdf4"' : '';
+          html += `<tr${style}><td>${s.step}</td><td style="font-family:monospace;font-size:11px">${esc(s.stack)}</td><td style="font-family:monospace;font-size:11px">${esc(s.input)}</td><td>${esc(s.action)}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+
+        if (data.parse_status === 'accepted') {
+          html += '<div style="margin-top:12px"><span class="badge badge-success">✅ Input Accepted</span></div>';
+        } else if (data.parse_status === 'error') {
+          html += `<div style="margin-top:12px"><span class="badge badge-error">❌ Rejected: ${esc(data.parse_error)}</span></div>`;
+        }
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+    }
+  </script>
+
+  <!-- ── BOTTOM NAVIGATION BAR ──────────── -->
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-group">
+      <button class="bnav-mode-btn active" id="bnModeCompiler" onclick="switchMode('compiler')"> Compiler</button>
+      <button class="bnav-mode-btn" id="bnModeGrammar" onclick="switchMode('grammar')"> Grammar</button>
+    </div>
+    <div class="bottom-nav-divider"></div>
+    <div class="bottom-nav-group" id="compilerTabs">
+      <button class="bnav-btn bnav-tab active" data-tab="tokens" onclick="switchTab('tokens')">Tokens</button>
+      <button class="bnav-btn bnav-tab" data-tab="parsetable" onclick="switchTab('parsetable')">Parse Table</button>
+      <button class="bnav-btn bnav-tab" data-tab="symtable" onclick="switchTab('symtable')">Symbol Table</button>
+      <button class="bnav-btn bnav-tab" data-tab="ast" onclick="switchTab('ast')">AST</button>
+      <!--<button class="bnav-btn bnav-tab" data-tab="optimizer" onclick="switchTab('optimizer')">⚡ Optimizer</button>-->
+    </div>
+  </nav>
+
+</body>
+
+</html>

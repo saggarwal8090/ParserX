@@ -1,0 +1,135 @@
+# TinyLang C Compiler Refactor — Walkthrough
+
+## What Was Built
+
+All compiler logic has been moved from Python to a standalone **C executable** (`tinylang_compiler`). Flask is now a thin subprocess wrapper only.
+
+## New File Structure
+
+```
+tinylang/
+├── compiler/
+│   ├── main.c          ← Orchestrates pipeline, prints JSON to stdout
+│   ├── lexer.c / .h    ← Tokenizer
+│   ├── parse_table.c / .h  ← FIRST/FOLLOW + LL(1) table construction
+│   ├── parser.c / .h   ← Stack-based predictive parser
+│   ├── ast.c / .h      ← Recursive-descent AST builder + serializer
+│   ├── symbol_table.c / .h ← Declaration + reference tracking
+│   ├── optimizer.c / .h ← Constant folding, dead code, loop invariants
+│   └── json_output.c / .h  ← JSON string builder helpers
+├── app.py              ← Flask: subprocess wrapper only (no compiler logic)
+├── Makefile            ← Build: produces tinylang_compiler(.exe)
+├── build.bat           ← Windows build helper (double-click)
+└── build_compiler.py   ← Python build helper (auto-detects gcc)
+```
+
+## Architecture
+
+```
+Frontend (HTML/JS)
+       ↓  POST /compile { "code": "..." }
+Flask app.py  (subprocess wrapper only)
+       ↓  stdin pipe
+tinylang_compiler.exe  (C binary — full pipeline)
+       ↓  stdout JSON
+Flask returns JSON
+       ↓  HTTP response
+All 5 tabs populate (Tokens, Parse Table, Symbol Table, AST, Optimizer)
+```
+
+## ⚠️ Build Required — You Must Compile First
+
+> [!IMPORTANT]
+> You need **gcc** installed. On Windows use MINGW64; on Mac use Xcode Command Line Tools.
+
+---
+
+### Using `make` on Windows (MINGW64) — Recommended
+
+**Step 1 — Check if `make` is already installed:**
+```bash
+make --version
+```
+If it prints a version, skip to Step 2.
+
+**Step 1b — Install make via MSYS2/MINGW64 (if missing):**
+```bash
+pacman -S make
+```
+
+**Step 2 — Navigate to the project and build:**
+```bash
+cd "/d/6 SEM/PBL/compiler Design pbl/compiler project 2/compiler project 2/tinylang"
+make
+```
+Output: `tinylang_compiler.exe`
+
+**Step 3 — Clean and rebuild (optional):**
+```bash
+make clean   # deletes the .exe
+make         # rebuilds from scratch
+```
+
+---
+
+### Using `make` on Mac — Recommended
+
+**Step 1 — Install Command Line Tools (one time only):**
+```bash
+xcode-select --install
+```
+
+**Step 2 — Build:**
+```bash
+cd /path/to/tinylang
+make
+```
+Output: `tinylang_compiler` (no `.exe` on Mac — Makefile handles this automatically)
+
+---
+
+### Alternative — Direct gcc command (Windows & Mac)
+```bash
+gcc -Wall -Wextra -O2 -o tinylang_compiler.exe \
+    compiler/main.c compiler/lexer.c compiler/parser.c \
+    compiler/parse_table.c compiler/ast.c compiler/symbol_table.c \
+    compiler/optimizer.c \
+    compiler/json_output.c
+```
+> On Mac, replace `tinylang_compiler.exe` with `tinylang_compiler`
+
+---
+
+## Smoke Test After Building
+
+```
+echo int x = 3 + 4; | tinylang_compiler.exe
+```
+
+Expected output: valid JSON with [tokens](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/lexer.c#21-28), [parse_table](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/parse_table.c#337-357), [ast](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/templates/index.html#1664-1670), [symbol_table](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/symbol_table.c#75-83), and [optimizer](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/optimizer.c#278-297) fields.
+
+## Start Flask
+
+```
+python app.py
+```
+
+Then open `http://localhost:5000` and click **Run** with any example to verify all tabs.
+
+## JSON Field Compatibility
+
+All JSON keys exactly match what the frontend reads:
+
+| Tab | Key |
+|-----|-----|
+| Tokens | `tokens[].type/value/line` |
+| Parse Table | `parse_table[NT][terminal]` |
+| Symbol Table | `symbol_table[].name/type/scope/line/references` |
+| AST | `ast.type/value/children` |
+| Optimizer | `optimizer.original_code/optimized_code/optimizations_applied` |
+
+## Notes
+
+- **Grammar Lab** (`/grammar-analyze`) still runs in Python — it supports arbitrary user-provided grammars, not just TinyLang, so it stays in [compiler/grammar_tool.py](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/grammar_tool.py)
+- `compile_time_ms` is added by the Flask wrapper (Python-side timing)
+- Old Python module files ([lexer.py](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/lexer.py), [parser.py](file:///d:/6%20SEM/PBL/compiler%20Design%20pbl/compiler%20project%202/compiler%20project%202/tinylang/compiler/parser.py), etc.) are stubbed out and should not be imported anymore
