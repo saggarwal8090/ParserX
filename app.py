@@ -56,18 +56,23 @@ def compile_code():
     compiler_path = _find_compiler()
     
     if not compiler_path:
-        # Try to build it if missing (useful for Vercel/Docker)
-        print("[DEBUG] Compiler missing, attempting to build with 'make'...", file=sys.stderr)
+        # Try to build it if missing using the helper script
+        print("[DEBUG] Compiler missing, attempting to build with 'build_compiler.py'...", file=sys.stderr)
         try:
-            subprocess.run(["make"], check=True, capture_output=True)
+            # We use the python script which is more robust than raw 'make' in some environments
+            subprocess.run([sys.executable, "build_compiler.py"], check=True, capture_output=True)
             compiler_path = _find_compiler()
         except Exception as e:
-            print(f"[DEBUG] Build failed: {e}", file=sys.stderr)
+            # Capture more detail about why the build failed
+            error_detail = str(e)
+            if hasattr(e, 'stderr') and e.stderr:
+                error_detail += f"\nStderr: {e.stderr.decode()}"
+            print(f"[DEBUG] Build failed: {error_detail}", file=sys.stderr)
 
     if not compiler_path:
         return jsonify({
             'status': 'error',
-            'error': 'Compiler binary not found and build failed. Please ensure GCC/Make are available.',
+            'error': 'Compiler binary not found and build failed. Vercel environment might lack GCC. Consider a platform with persistent storage or full system access.',
             'tokens': [], 'parse_table': {}, 'ast': {},
             'symbol_table': [], 'optimizer': {}, 'compile_time_ms': 0,
         })
