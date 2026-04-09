@@ -54,12 +54,20 @@ def compile_code():
         print(f"[DEBUG] source_code preview: {preview}", file=sys.stderr)
 
     compiler_path = _find_compiler()
-    print(f"[DEBUG] compiler_path      : {compiler_path}", file=sys.stderr)
+    
+    if not compiler_path:
+        # Try to build it if missing (useful for Vercel/Docker)
+        print("[DEBUG] Compiler missing, attempting to build with 'make'...", file=sys.stderr)
+        try:
+            subprocess.run(["make"], check=True, capture_output=True)
+            compiler_path = _find_compiler()
+        except Exception as e:
+            print(f"[DEBUG] Build failed: {e}", file=sys.stderr)
 
     if not compiler_path:
         return jsonify({
             'status': 'error',
-            'error': 'Compiler not found. Run `make` (or build.bat) in the project root first.',
+            'error': 'Compiler binary not found and build failed. Please ensure GCC/Make are available.',
             'tokens': [], 'parse_table': {}, 'ast': {},
             'symbol_table': [], 'optimizer': {}, 'compile_time_ms': 0,
         })
