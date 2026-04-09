@@ -1,0 +1,16 @@
+int global_var = 100;
+
+func test_function(int p) {
+    int func_var = 50;
+    print(func_var + p);
+}
+
+func main() {
+    float f = 3.14;
+    int unused = test_function(global_var);
+
+    for (int i = 0; i < 10; i = i + 1) {
+        int local_loop_var = i * 2;
+        print(local_loop_var);
+    }
+}

@@ -9,7 +9,7 @@ static const char *NON_TERMINALS[] = {
     "IfStmt","ElsePart","WhileStmt","ForStmt","ReturnStmt","PrintStmt",
     "FuncDecl","ParamList","MoreParams","Block","Condition","RelOp",
     "Expr","ExprRest","Term","TermRest","Factor","FactorRest","ArgList","MoreArgs",
-    "ForAssign", NULL
+    "ForAssign", "ForInit", NULL
 };
 
 static int is_nonterminal(const char *sym) {

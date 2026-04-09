@@ -208,7 +208,15 @@ static ASTNode *parse_while(Builder *b) {
 static ASTNode *parse_for(Builder *b) {
     const Token *tok = b_eat(b, "for", NULL);
     b_eat(b, "(", NULL);
-    ASTNode *init = parse_assignment(b);
+    
+    ASTNode *init = NULL;
+    const char *val = b_peek_val(b);
+    if (strcmp(val, "int") == 0 || strcmp(val, "float") == 0 || strcmp(val, "string") == 0) {
+        init = parse_declaration(b);
+    } else {
+        init = parse_assignment(b);
+    }
+    
     ASTNode *cond = parse_condition(b);
     b_eat(b, ";", NULL);
     ASTNode *update = parse_assign_no_semi(b);

@@ -58,6 +58,11 @@ static void walk(const ASTNode *node, const char *scope) {
         return;
     }
 
+    if (strcmp(node->type, "ForStmt") == 0) {
+        for (int i = 0; i < node->child_count; i++) walk(node->children[i], "local");
+        return;
+    }
+
     if (strcmp(node->type, "Identifier") == 0) {
         inc_ref(node->value);
         return;

@@ -1,0 +1,142 @@
+// Comprehensive Test for TinyLang
+// This script utilizes all grammar parameters, definitions, types, and loops available.
+
+// 1. Global Declarations
+int global_counter = 0;
+float global_pi = 3.14159;
+string greeting = "Hello, TinyLang!";
+
+// 2. Arithmetic and While Loops
+func factorial(int n) {
+    if (n < 0) {
+        return 0;
+    }
+    if (n == 0) {
+        return 1;
+    }
+    
+    int result = 1;
+    int current = 1;
+    
+    // While loop test
+    while (current <= n) {
+        result = result * current;
+        current = current + 1;
+    }
+    
+    return result;
+}
+
+// 3. Float Operations and If-Else Branching
+func compute_circle_area(float radius) {
+    if (radius <= 0) {
+        print("Invalid radius!");
+        return 0.0;
+    } else {
+        float area = global_pi * radius * radius;
+        return area;
+    }
+}
+
+// 4. For Loops with internal logic
+func sum_arithmetic(int start_val, int end_val, int step) {
+    int sum = 0;
+    
+    // For loop testing with internal declaration
+    for (int i = start_val; i <= end_val; i = i + step) {
+        sum = sum + i;
+        
+        // Nested if condition inside for loop
+        if (i == 50) {
+            print("Reached halfway point!");
+        }
+    }
+    return sum;
+}
+
+// 5. Relational Operators Comparison
+func find_max(int a, int b) {
+    int mx = 0;
+    if (a > b) {
+        mx = a;
+    } else {
+        mx = b;
+    }
+    return mx;
+}
+
+// 6. Recursion Support (Testing symbol table references)
+func fibonacci(int n) {
+    if (n <= 1) {
+        return n;
+    }
+    
+    // Using functions recursively
+    int f1 = fibonacci(n - 1);
+    int f2 = fibonacci(n - 2);
+    
+    int rez = f1 + f2;
+    return rez;
+}
+
+// 7. Modifying Global State
+func increment_counter() {
+    global_counter = global_counter + 1;
+    return global_counter;
+}
+
+// 8. Main execution
+func main() {
+    print(greeting);
+    
+    // Basic types and operators
+    string intro = "Starting calculations...";
+    print(intro);
+    
+    // Factorial evaluation
+    int fact_five = factorial(5);
+    print(fact_five);
+    
+    // Float arithmetic verification
+    float rad = 10.5;
+    float area_res = compute_circle_area(rad);
+    print(area_res);
+    
+    // For loop execution
+    int total_sum = sum_arithmetic(0, 100, 10);
+    print(total_sum);
+    
+    // Fibonacci recursive jump
+    int fib_value = fibonacci(7);
+    print(fib_value);
+    
+    // MAX bounds evaluation
+    int x1 = 42;
+    int y1 = 73;
+    int max_val = find_max(x1, y1);
+    print(max_val);
+    
+    // Dynamic while-state update
+    while (global_counter < 3) {
+        int temp = increment_counter();
+        print(temp);
+    }
+    
+    // Complex order of operations
+    int uninit_var;
+    uninit_var = 10;
+    int complex_math = fact_five * 2 + uninit_var / 5 - total_sum;
+    print(complex_math);
+    
+    // Comprehensive bounds checking
+    if (complex_math != 0) {
+        print("Math operators sequence validated correctly.");
+    } else {
+        print("Something went wrong!");
+    }
+    
+    return 1;
+}
+
+// Closing global declarations
+string farewell = "Execution Finished!";

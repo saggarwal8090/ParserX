@@ -51,7 +51,7 @@ static void init_grammar(void) {
         "IfStmt","ElsePart","WhileStmt","ForStmt","ReturnStmt","PrintStmt",
         "FuncDecl","ParamList","MoreParams","Block","Condition","RelOp",
         "Expr","ExprRest","Term","TermRest","Factor","FactorRest","ArgList","MoreArgs",
-        "ForAssign", NULL
+        "ForAssign", "ForInit", NULL
     };
     for (int i = 0; nts[i]; i++) register_nt(nts[i]);
 
@@ -99,8 +99,12 @@ static void init_grammar(void) {
     /* WhileStmt → while ( Condition ) Block */
     { const char *r[] = {"while","(","Condition",")","Block"}; add_prod("WhileStmt", r, 5); }
 
-    /* ForStmt → for ( Assignment Condition ; ForAssign ) Block */
-    { const char *r[] = {"for","(","Assignment","Condition",";","ForAssign",")","Block"}; add_prod("ForStmt", r, 8); }
+    /* ForInit → Declaration | Assignment */
+    { const char *r[] = {"Declaration"}; add_prod("ForInit", r, 1); }
+    { const char *r[] = {"Assignment"};  add_prod("ForInit", r, 1); }
+
+    /* ForStmt → for ( ForInit Condition ; ForAssign ) Block */
+    { const char *r[] = {"for","(","ForInit","Condition",";","ForAssign",")","Block"}; add_prod("ForStmt", r, 8); }
 
     /* ReturnStmt → return Expr ; */
     { const char *r[] = {"return","Expr",";"}; add_prod("ReturnStmt", r, 3); }

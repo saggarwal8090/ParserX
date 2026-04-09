@@ -1018,6 +1018,10 @@
           <button class="dropdown-item" onclick="loadExample(4)">4. If-Else Branching</button>
           <button class="dropdown-item" onclick="loadExample(5)">5. While Loop Counter</button>
           <button class="dropdown-item" onclick="loadExample(6)">6. Function Definition</button>
+          <button class="dropdown-item" onclick="loadExample(7)">7. Quadratic Equation Roots</button>
+          <button class="dropdown-item" onclick="loadExample(8)">8. Binary Search (~50 lines)</button>
+          <button class="dropdown-item" onclick="loadExample(9)">9. Fibonacci Sequence</button>
+          <button class="dropdown-item" onclick="loadExample(11)">11. Comprehensive Variables (Global/Local)</button>
         </div>
       </div>
       <label class="file-import-label"
@@ -1041,6 +1045,8 @@
           <button class="dropdown-item" onclick="loadGrammarExample(6)">6. Unary Operators</button>
           <button class="dropdown-item" onclick="loadGrammarExample(7)">7. Function Calls</button>
           <button class="dropdown-item" onclick="loadGrammarExample(8)">⚠️ 8. Non-LL(1) Left Recursive</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(9)">⚠️ 9. Boolean Expressions</button>
+          <button class="dropdown-item" onclick="loadGrammarExample(10)">10. JSON Arrays</button>
         </div>
       </div>
       <label class="file-import-label"
@@ -1192,7 +1198,198 @@
       3: `func compute(int n) {\nint i = 0;\nfor (i = 0; i < n; i = i + 1) {\nint j = 0;\nfor (j = 0; j < n; j = j + 1) {\nint val = i + j;\n}\n}\nreturn 0;\n}`,
       4: `int score = 85;\nif (score > 90) {\nprint(1);\n} else {\nif (score > 60) {\nprint(2);\n} else {\nprint(3);\n}\n}`,
       5: `int count = 0;\nint limit = 100;\nwhile (count < limit) {\ncount = count + 1;\n}\nprint(count);`,
-      6: `func factorial(int n) {\nint result = 1;\nint i = 1;\nfor (i = 1; i < n; i = i + 1) {\nresult = result * i;\n}\nreturn result;\n}\nint ans = factorial(5);\nprint(ans);`
+      6: `func factorial(int n) {\nint result = 1;\nint i = 1;\nfor (i = 1; i < n; i = i + 1) {\nresult = result * i;\n}\nreturn result;\n}\nint ans = factorial(5);\nprint(ans);`,
+      7: `// Program to find integer roots of a quadratic equation ax^2 + bx + c = 0
+// We will use a basic integer square root using binary search.
+
+func isqrt(int n) {
+    if (n < 0) {
+        return 0 - 1; 
+    }
+    if (n == 0) {
+        return 0;
+    }
+    int left = 1;
+    int right = n;
+    int ans = 0;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        int max = n / mid;
+        if (mid == max) {
+            return mid;
+        }
+        if (mid < max) {
+            left = mid + 1;
+            ans = mid;
+        } else {
+            right = mid - 1;
+        }
+    }
+    return ans;
+}
+
+func quadratic(int a, int b, int c) {
+    int discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) {
+        return 0;
+    }
+    int sqrt_d = isqrt(discriminant);
+    int root1 = (0 - b + sqrt_d) / (2 * a);
+    int root2 = (0 - b - sqrt_d) / (2 * a);
+    return root1 + root2;
+}
+
+int a = 1;
+int b = 0 - 5;
+int c = 6;
+int result = quadratic(a, b, c);
+print(result);`,
+      8: `// Binary Search 
+// This function performs a binary search algorithm 
+// to find an integer square root as an example
+// Target length ~50 lines
+
+func binarySearch(int target) {
+    int low = 0;
+    int high = target;
+    int best = 0;
+    
+    // Check for negative numbers 
+    // Return negative one as an error representation
+    if (target < 0) {
+        return 0 - 1; 
+    }
+    
+    // Handle the base case for 0
+    if (target == 0) {
+        return 0;
+    }
+    
+    // Handle the base case for 1
+    if (target == 1) {
+        return 1;
+    }
+    
+    // Main while loop for binary search logic
+    while (low <= high) {
+        // Calculate the middle point of current search space
+        // This avoids potential integer overflow
+        int diff = high - low;
+        int half = diff / 2;
+        int mid = low + half;
+        
+        // Calculate square of the middle element
+        int max = target / mid;
+        
+        // Compare mid with max
+        if (mid == max) {
+            return mid;
+        }
+        
+        if (mid < max) {
+            // Mid is smaller, search in right half
+            low = mid + 1;
+            
+            // Record best approximation seen so far
+            best = mid;
+        } else {
+            // Mid is larger, search in left half
+            high = mid - 1;
+        }
+    }
+    
+    // Return the floor of the square root
+    return best;
+}
+
+// Setting the target number to find root
+int targetNumber = 144;
+
+// Execute functionality
+int root = binarySearch(targetNumber);
+
+// Output the computation result
+print(root);`,
+      9: `// Fibonacci Sequence using Iteration
+func fibonacci(int n) {
+    if (n <= 0) {
+        return 0;
+    }
+    if (n == 1) {
+        return 1;
+    }
+    int a = 0;
+    int b = 1;
+    int i = 2;
+    int temp = 0;
+    while (i <= n) {
+        temp = a + b;
+        a = b;
+        b = temp;
+        i = i + 1;
+    }
+    return b;
+}
+
+int target = 10;
+int result = fibonacci(target);
+print(result);`,
+      10: `// Prime Number Checker
+func isPrime(int n) {
+    if (n <= 1) {
+        return 0; // false
+    }
+    if (n == 2) {
+        return 1; // true
+    }
+    int i = 2;
+    // We check up to n-1
+    while (i < n) {
+        int div = n / i;
+        int mult = div * i;
+        if (mult == n) {
+            return 0; // false, divisible
+        }
+        i = i + 1;
+    }
+    return 1; // true
+}
+
+int num = 17;
+int result = isPrime(num);
+print(result);`,
+      11: `// Comprehensive Test for Global, Function, and Local Scopes
+// Demonstrates variable tracking in the Symbol Table
+
+// 1. Global Declarations
+int global_count = 100;
+string intro = "Scope Demo Starting...";
+
+func demoScopes(int parameter_var) {
+    // 2. Function-scoped variable
+    int function_local = 50;
+    
+    print(intro);
+    print(parameter_var + function_local);
+    
+    // 3. Loop-local variables (Limited to 'for' block scope)
+    for (int i = 0; i < 5; i = i + 1) {
+        // This 'i' and 'loop_temp' will show as 'local' scope
+        int loop_temp = i * 10;
+        print(loop_temp);
+    }
+    
+    return 0;
+}
+
+func main() {
+    print("Executing Main...");
+    
+    // Call function with global variable
+    int status = demoScopes(global_count);
+    
+    return status;
+}`
     };
 
     // ── Editor ────────────────────────────────
@@ -1775,6 +1972,16 @@ async function runCompiler() {
         name: 'Non-LL(1) — Left Recursive',
         grammar: `E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id`,
         input: 'id + id'
+      },
+      9: {
+        name: 'Boolean Expressions',
+        grammar: `B -> B or T | T\nT -> T and F | F\nF -> not F | ( B ) | true | false`,
+        input: 'true and not false or true'
+      },
+      10: {
+        name: 'JSON Arrays',
+        grammar: `A -> [ V AL ] | [ ]\nAL -> , V AL | ε\nV -> string | num | A`,
+        input: '[ string , num , [ num ] ]'
       }
     };
 
