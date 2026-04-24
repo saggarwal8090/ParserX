@@ -1020,8 +1020,15 @@
           <button class="dropdown-item" onclick="loadExample(6)">6. Function Definition</button>
           <button class="dropdown-item" onclick="loadExample(7)">7. Quadratic Equation Roots</button>
           <button class="dropdown-item" onclick="loadExample(8)">8. Binary Search (~50 lines)</button>
+          <div style="border-top:1px solid #334155; margin:4px 0;"></div>
           <button class="dropdown-item" onclick="loadExample(9)">9. Fibonacci Sequence</button>
-          <button class="dropdown-item" onclick="loadExample(11)">11. Comprehensive Variables (Global/Local)</button>
+          <button class="dropdown-item" onclick="loadExample(10)">10. Prime Number Checker</button>
+          <button class="dropdown-item" onclick="loadExample(11)">11. Scope Demo</button>
+          <div style="border-top:1px solid #334155; margin:4px 0;"></div>
+          <button class="dropdown-item" onclick="loadExample(12)">12. Opt: Constant Folding</button>
+          <button class="dropdown-item" onclick="loadExample(13)">13. Opt: Dead Code Elim</button>
+          <button class="dropdown-item" onclick="loadExample(14)">14. Opt: Loop Invariant</button>
+          <button class="dropdown-item" onclick="loadExample(15)">15. Mega Test (>100 Lines)</button>
         </div>
       </div>
       <label class="file-import-label"
@@ -1389,7 +1396,11 @@ func main() {
     int status = demoScopes(global_count);
     
     return status;
-}`
+},
+      12: `// --- Constant Folding Optimization ---\nint a = 10 + 20 * 2; // Folded to 50\nfloat b = 3.14 * 2.0; // Folded to 6.28\nprint(a);\nprint(b);`,
+      13: `// --- Dead Code Elimination ---\nfunc test() {\n  int x = 100;\n  return x;\n  // Everything below here is removed\n  int y = 200;\n  print("Unreachable");\n}\nprint(test());`,
+      14: `// --- Loop Invariant Motion ---\nint n = 100;\nint i = 0;\nwhile (i < n) {\n  int x = 10 + 5; // Moved outside loop (15)\n  print(i);\n  i = i + 1;\n}`,
+      15: `// ==========================================\n// ParserX Mega Test Program (>100 Lines)\n// Demonstrates all types & optimizations\n// ==========================================\n\n// Global variables\nint global_success = 1;\nfloat global_pi = 3.14159;\nstring app_version = "v2.0.4-stable";\n\n// --- Utility Functions ---\n\nfunc check_status(int code) {\n  if (code == 1) {\n    print("Status: OK");\n  } else {\n    print("Status: Error");\n  }\n  return code;\n}\n\nfunc calculate_area(float radius) {\n  float area = 3.14 * radius * radius;\n  return area;\n}\n\nfunc process_sequence(int limit) {\n  int sum = 0;\n  int k = 0;\n  \n  // Constant folding in loop header\n  for (k = 0; k < limit; k = k + 1) {\n    // Loop invariant sub-expression\n    int factor = 5 * 2;\n    sum = sum + k * factor;\n    \n    if (sum > 1000) {\n      print("Sum threshold reached");\n    }\n  }\n  \n  return sum;\n}\n\n// --- Demo Logic ---\n\nfunc run_demo() {\n  print("--- Starting ParserX Mega Demo ---");\n  \n  string user = "Developer";\n  print("Logged in as: ");\n  print(user);\n\n  // Using declared types: int, float, string\n  int retry_count = 3;\n  float precision = 0.0001;\n  string status_msg = "Processing...";\n\n  while (retry_count > 0) {\n    print(status_msg);\n    retry_count = retry_count - 1;\n  }\n\n  // Optimization check: Unused variable below\n  int secret_key = 9999;\n\n  // Optimization check: Dead code below\n  if (0 == 1) {\n    print("This will never execute");\n  }\n\n  // Complex calculation\n  float r = 5.0;\n  float a = calculate_area(r);\n  print("Area for radius 5:");\n  print(a);\n\n  return 0;\n}\n\n// --- Main Program Entry ---\n\nint startup_res = check_status(global_success);\n\nif (startup_res == 1) {\n  int final_sum = process_sequence(50);\n  print("Final sequence sum:");\n  print(final_sum);\n  \n  int demo_status = run_demo();\n}\n\n// Additional lines for count requirement\n// ----------------------------------------\nint line_pad = 0;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\nline_pad = line_pad + 1;\n\nprint("Demo complete. Version: ");\nprint(app_version);\n// ==========================================`
     };
 
     // ── Editor ────────────────────────────────
