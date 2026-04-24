@@ -1396,7 +1396,7 @@ func main() {
     int status = demoScopes(global_count);
     
     return status;
-},
+}`,
       12: `// --- Constant Folding Optimization ---\nint a = 10 + 20 * 2; // Folded to 50\nfloat b = 3.14 * 2.0; // Folded to 6.28\nprint(a);\nprint(b);`,
       13: `// --- Dead Code Elimination ---\nfunc test() {\n  int x = 100;\n  return x;\n  // Everything below here is removed\n  int y = 200;\n  print("Unreachable");\n}\nprint(test());`,
       14: `// --- Loop Invariant Motion ---\nint n = 100;\nint i = 0;\nwhile (i < n) {\n  int x = 10 + 5; // Moved outside loop (15)\n  print(i);\n  i = i + 1;\n}`,
